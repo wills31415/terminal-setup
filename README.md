@@ -1,8 +1,9 @@
-# Terminal personnalisé — Installation WSL2
+# Terminal Setup
 
-Prompt Powerline, fzf, couleurs et complétion avancée pour Bash sous WSL2.
+Prompt Powerline, fzf, couleurs et complétion avancée pour Bash.
+Fonctionne sur **macOS**, **Linux** (Ubuntu/Debian), **WSL2** et **Raspberry Pi**.
 
-## Aperçu
+## Apercu
 
 Le prompt affiche en temps réel :
 - **✔ / ✘** — statut et durée de la dernière commande
@@ -15,48 +16,64 @@ Le prompt affiche en temps réel :
 
 ---
 
-## Prérequis
+## Installation
 
-### 1. Police Nerd Font (sur Windows, pas dans WSL2)
+```bash
+git clone git@github.com:wills31415/terminal-setup.git
+cd terminal-setup
+./install.sh
+```
 
-Les séparateurs Powerline et icônes nécessitent une police spéciale installée côté Windows.
+Le script détecte automatiquement la plateforme et :
+1. Installe les dépendances (`git`, `bash-completion`, `fzf`, Nerd Font)
+2. Sauvegarde l'ancien `~/.bashrc`
+3. Migre les personnalisations locales (conda, docker-apps…) vers `~/.bashrc.local`
+4. Déploie le nouveau `~/.bashrc`
+5. Configure `~/.bash_profile` si nécessaire (macOS)
 
-1. Télécharger **MesloLGS NF** : https://github.com/ryanoasis/nerd-fonts/releases/latest
-   → choisir `Meslo.zip` dans les assets
-2. Décompresser → sélectionner tous les `.ttf` → clic droit → **Installer pour tous les utilisateurs**
-3. Ouvrir **Windows Terminal** → ⚙ Paramètres → Profils → *Ubuntu* (ou ton profil WSL2)
-   → Apparence → Police de caractères → `MesloLGS NF`
+### Installation distante (SSH)
 
-> Sans cette étape, les séparateurs s'affichent comme des carrés □.
+```bash
+ssh mon-serveur 'git clone git@github.com:wills31415/terminal-setup.git ~/terminal-setup && ~/terminal-setup/install.sh'
+```
 
 ---
 
-## Installation
+## Prérequis : police Nerd Font
 
-### 2. Dépendances dans WSL2
+Les séparateurs Powerline (▶) nécessitent une police Nerd Font
+**sur le terminal depuis lequel tu te connectes** (pas sur le serveur distant).
 
-```bash
-sudo apt update && sudo apt install -y git bash-completion fzf
-```
+| Plateforme | Configuration |
+|---|---|
+| **macOS** (iTerm2) | `brew install --cask font-meslo-lg-nerd-font` puis iTerm2 → Settings → Profiles → Text → Font → **MesloLGS Nerd Font** |
+| **macOS** (Terminal.app) | Télécharger [MesloLGS NF](https://github.com/ryanoasis/nerd-fonts/releases/latest) → installer les `.ttf` → Terminal → Préférences → Police |
+| **Windows Terminal** | Télécharger [MesloLGS NF](https://github.com/ryanoasis/nerd-fonts/releases/latest) → installer → Paramètres → Profil → Apparence → Police → **MesloLGS NF** |
 
-> **fzf alternatif** (version plus récente via git) :
-> ```bash
-> git clone --depth 1 https://github.com/junegunn/fzf.git ~/.fzf
-> ~/.fzf/install --key-bindings --completion --no-update-rc
-> ```
+> Sans police Nerd Font, les séparateurs s'affichent comme des carrés □.
 
-### 3. Installer le bashrc
+---
 
-```bash
-# Sauvegarder l'ancien .bashrc
-cp ~/.bashrc ~/.bashrc.backup
+## Raccourcis fzf
 
-# Copier le nouveau
-cp bashrc ~/.bashrc
+| Raccourci | Fonction |
+|---|---|
+| `Ctrl+R` | Recherche floue dans l'historique |
+| `Ctrl+T` | Navigation floue dans les fichiers |
+| `Alt+C` | Navigation floue dans les répertoires (`cd`) |
 
-# Recharger
-source ~/.bashrc
-```
+### Alt+C sur macOS (iTerm2)
+
+Par défaut, `Option+C` envoie `ç` au lieu du signal attendu par fzf.
+Pour activer le raccourci **sans casser les accents** (é, è, ç…) :
+
+1. iTerm2 → Settings → Profiles → Keys → **Key Mappings**
+2. Cliquer **+** (ajouter)
+3. Keyboard Shortcut : appuyer sur **⌥C**
+4. Action : **Send Escape Sequence**
+5. Valeur : **c**
+
+> Seul `⌥C` est remappé — les autres combinaisons Option continuent de produire les caractères accentués.
 
 ---
 
@@ -67,29 +84,40 @@ source ~/.bashrc
 | Ouvrir un nouveau terminal | Prompt Powerline avec séparateurs ▶ (pas de □) |
 | `Ctrl+R` | Recherche floue dans l'historique (fzf) |
 | `Ctrl+T` | Navigation floue dans les fichiers (fzf) |
+| `Alt+C` | Navigation floue dans les répertoires (fzf) |
 | `ls` | Fichiers en couleur |
 | Se placer dans un dépôt git | Segment `⎇ main` visible dans le prompt |
 | Lancer une commande longue | Durée affichée dans le segment statut |
+| Connexion SSH | Segment ambre ⚡ user@host |
 
 ---
 
-## Fonctionnalités optionnelles
+## Personnalisations locales
 
-### Conda / Python (segment 🐍)
+Le fichier `~/.bashrc.local` (non versionné) est sourcé à la fin du bashrc.
+C'est l'endroit pour les ajouts propres à une machine :
 
-Installer [Miniconda](https://docs.conda.io/en/latest/miniconda.html) pour WSL2 (Linux x86_64).  
-Le segment apparaît automatiquement dès qu'un environnement est activé (`conda activate mon-env`).
+```bash
+# Conda
+# >>> conda initialize >>>
+# ...
+# <<< conda initialize <<<
 
-### Clusters Docker (segment 🐳)
+# Docker apps
+source ~/docker-apps/.bash_utils
 
-Ce segment utilise un outil custom (`da`) pour gérer des clusters Docker Compose.  
-Définir la variable `CUSTOM_DOCKER_CLUSTER_BASE_PATH` dans `~/.bashrc` pour l'activer.
+# Variables d'environnement locales
+export CUSTOM_DOCKER_CLUSTER_BASE_PATH=~/docker-apps
+```
+
+L'install.sh migre automatiquement ces blocs depuis un bashrc existant.
 
 ---
 
 ## Structure du dépôt
 
 ```
-bashrc      → à placer en ~/.bashrc dans WSL2
-README.md   → ce fichier
+bashrc       → ~/.bashrc (universel, détecte l'OS)
+install.sh   → script d'installation automatique
+README.md    → ce fichier
 ```
