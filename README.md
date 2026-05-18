@@ -118,43 +118,6 @@ L'install.sh migre automatiquement ces blocs depuis un bashrc existant.
 
 ---
 
-## Conseils pour les serveurs SSH
-
-### Supprimer le MOTD
-
-Créer un fichier `~/.hushlogin` pour désactiver le message d'accueil (MOTD)
-affiché à chaque connexion SSH :
-
-```bash
-touch ~/.hushlogin
-```
-
-### Warning post-quantum key exchange
-
-Si le client SSH affiche :
-
-```
-** WARNING: connection is not using a post-quantum key exchange algorithm.
-```
-
-C'est que le serveur ne propose pas d'algorithme d'échange de clés post-quantique.
-Vérifier qu'il en supporte un :
-
-```bash
-ssh -Q kex | grep -E 'sntrup|mlkem'
-```
-
-Si oui, l'ajouter en tête de la config serveur (`/etc/ssh/sshd_config`) :
-
-```bash
-# Exemple pour OpenSSH 9.x (Ubuntu 24.04)
-KexAlgorithms sntrup761x25519-sha512@openssh.com,curve25519-sha256,curve25519-sha256@libssh.org,diffie-hellman-group-exchange-sha256
-```
-
-Puis recharger : `sudo systemctl reload sshd`
-
----
-
 ## Structure du dépôt
 
 ```
