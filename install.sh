@@ -65,11 +65,48 @@ install_deps() {
             else
                 ok "Dépendances déjà installées"
             fi
+            install_nerd_font_linux
             ;;
         *)
             warn "Plateforme inconnue — installation des dépendances ignorée"
             ;;
     esac
+}
+
+# ══════════════════════════════════════════════════════════════
+#  Installation de la police Nerd Font (Linux)
+# ══════════════════════════════════════════════════════════════
+install_nerd_font_linux() {
+    local font_dir="$HOME/.local/share/fonts/MesloLGS-NF"
+
+    if fc-list 2>/dev/null | grep -qi "MesloLGS Nerd Font"; then
+        ok "MesloLGS Nerd Font déjà installée"
+        return 0
+    fi
+
+    local url="https://github.com/ryanoasis/nerd-fonts/releases/latest/download/Meslo.zip"
+    local tmpzip
+    tmpzip="$(mktemp /tmp/meslo-nf-XXXXXX.zip)"
+
+    info "Téléchargement de MesloLGS Nerd Font..."
+    if command -v curl &>/dev/null; then
+        curl -fsSL -o "$tmpzip" "$url"
+    elif command -v wget &>/dev/null; then
+        wget -q -O "$tmpzip" "$url"
+    else
+        warn "Ni curl ni wget disponible — installation de la police ignorée"
+        return 0
+    fi
+
+    mkdir -p "$font_dir"
+    unzip -qo "$tmpzip" -d "$font_dir"
+    rm -f "$tmpzip"
+
+    if command -v fc-cache &>/dev/null; then
+        fc-cache -f "$font_dir"
+    fi
+
+    ok "MesloLGS Nerd Font installée → $font_dir"
 }
 
 # ══════════════════════════════════════════════════════════════
@@ -342,9 +379,14 @@ post_install() {
         wsl2)
             info "Police : Windows Terminal → Paramètres → Profil → Apparence → MesloLGS NF"
             ;;
-        raspberry|linux)
-            info "La police Nerd Font doit être configurée sur le terminal"
-            info "depuis lequel tu te connectes en SSH (pas sur cette machine)."
+        linux)
+            info "Police installée. Configure ton émulateur de terminal :"
+            info "  GNOME Terminal → Préférences → Profil → Police → MesloLGS Nerd Font"
+            info "  XFCE Terminal  → Préférences → Apparence → Police → MesloLGS Nerd Font"
+            ;;
+        raspberry)
+            info "Police installée sur cette machine."
+            info "Pour le SSH, la police doit aussi être sur le terminal client."
             ;;
     esac
 

@@ -39,16 +39,20 @@ ssh mon-serveur 'git clone git@github.com:wills31415/terminal-setup.git ~/termin
 
 ---
 
-## Prérequis : police Nerd Font
+## Police Nerd Font
 
-Les séparateurs Powerline (▶) nécessitent une police Nerd Font
-**sur le terminal depuis lequel tu te connectes** (pas sur le serveur distant).
+Les séparateurs Powerline (▶) nécessitent une police Nerd Font.
+Sur Linux et macOS, `install.sh` l'installe automatiquement.
+Il reste à la **sélectionner dans le terminal** :
 
 | Plateforme | Configuration |
 |---|---|
-| **macOS** (iTerm2) | `brew install --cask font-meslo-lg-nerd-font` puis iTerm2 → Settings → Profiles → Text → Font → **MesloLGS Nerd Font** |
-| **macOS** (Terminal.app) | Télécharger [MesloLGS NF](https://github.com/ryanoasis/nerd-fonts/releases/latest) → installer les `.ttf` → Terminal → Préférences → Police |
+| **macOS** (iTerm2) | iTerm2 → Settings → Profiles → Text → Font → **MesloLGS Nerd Font** |
+| **macOS** (Terminal.app) | Terminal → Préférences → Profil → Police → **MesloLGS Nerd Font** |
+| **Linux** (GNOME Terminal) | Préférences → Profil → Police → **MesloLGS Nerd Font** |
+| **Linux** (XFCE Terminal) | Préférences → Apparence → Police → **MesloLGS Nerd Font** |
 | **Windows Terminal** | Télécharger [MesloLGS NF](https://github.com/ryanoasis/nerd-fonts/releases/latest) → installer → Paramètres → Profil → Apparence → Police → **MesloLGS NF** |
+| **SSH** | La police doit être configurée sur le **terminal client**, pas sur le serveur distant |
 
 > Sans police Nerd Font, les séparateurs s'affichent comme des carrés □.
 
@@ -111,6 +115,43 @@ export CUSTOM_DOCKER_CLUSTER_BASE_PATH=~/docker-apps
 ```
 
 L'install.sh migre automatiquement ces blocs depuis un bashrc existant.
+
+---
+
+## Conseils pour les serveurs SSH
+
+### Supprimer le MOTD
+
+Créer un fichier `~/.hushlogin` pour désactiver le message d'accueil (MOTD)
+affiché à chaque connexion SSH :
+
+```bash
+touch ~/.hushlogin
+```
+
+### Warning post-quantum key exchange
+
+Si le client SSH affiche :
+
+```
+** WARNING: connection is not using a post-quantum key exchange algorithm.
+```
+
+C'est que le serveur ne propose pas d'algorithme d'échange de clés post-quantique.
+Vérifier qu'il en supporte un :
+
+```bash
+ssh -Q kex | grep -E 'sntrup|mlkem'
+```
+
+Si oui, l'ajouter en tête de la config serveur (`/etc/ssh/sshd_config`) :
+
+```bash
+# Exemple pour OpenSSH 9.x (Ubuntu 24.04)
+KexAlgorithms sntrup761x25519-sha512@openssh.com,curve25519-sha256,curve25519-sha256@libssh.org,diffie-hellman-group-exchange-sha256
+```
+
+Puis recharger : `sudo systemctl reload sshd`
 
 ---
 
