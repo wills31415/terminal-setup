@@ -208,7 +208,7 @@ migrate_existing_bashrc() {
         'EPOCHREALTIME'
         '^\s*trap.*DEBUG'
         'bind .*set (completion|show-all|colored|mark-sym)'
-        '(fzf --bash|\.fzf\.bash|fzf.*key-bindings)'
+        '(fzf --bash|\.fzf\.bash|fzf.*key-bindings|completions/fzf)'
         'bashrc\.local'
         '(update_terminal_cwd|__iterm2_|__bp_)'
         '(seg_status|seg_host|seg_git|seg_py|seg_dock|seg_job)'
