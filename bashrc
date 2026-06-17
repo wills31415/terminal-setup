@@ -173,7 +173,16 @@ _prompt_command() {
     if [[ -n "${CONDA_DEFAULT_ENV:-}" ]]; then
         seg_py_content="🐍 ${CONDA_DEFAULT_ENV}"
     elif [[ -n "${VIRTUAL_ENV:-}" ]]; then
-        seg_py_content="🐍 ${VIRTUAL_ENV_PROMPT:-$(basename "$VIRTUAL_ENV")}"
+        local _venv_name="${VIRTUAL_ENV_PROMPT:-}"
+        if [[ -z "$_venv_name" ]]; then
+            _venv_name="$(basename "$VIRTUAL_ENV")"
+            # Noms génériques → on affiche plutôt le dossier projet (parent)
+            case "$_venv_name" in
+                .venv|venv|.env|env|virtualenv|.virtualenv)
+                    _venv_name="$(basename "$(dirname "$VIRTUAL_ENV")")" ;;
+            esac
+        fi
+        seg_py_content="🐍 ${_venv_name}"
     fi
 
     # ── Segment : clusters Docker actifs ──
