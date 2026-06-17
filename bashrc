@@ -60,6 +60,7 @@ export PATH="$HOME/.local/bin:$PATH"
 #  POWERLINE PROMPT
 # =============================================================
 export CONDA_CHANGEPS1=false
+export VIRTUAL_ENV_DISABLE_PROMPT=1
 
 _PL_SEP=$''
 
@@ -169,7 +170,11 @@ _prompt_command() {
 
     # ── Segment : conda/python ──
     local seg_py_content=""
-    [[ -n "${CONDA_DEFAULT_ENV:-}" ]] && seg_py_content="🐍 ${CONDA_DEFAULT_ENV}"
+    if [[ -n "${CONDA_DEFAULT_ENV:-}" ]]; then
+        seg_py_content="🐍 ${CONDA_DEFAULT_ENV}"
+    elif [[ -n "${VIRTUAL_ENV:-}" ]]; then
+        seg_py_content="🐍 ${VIRTUAL_ENV_PROMPT:-$(basename "$VIRTUAL_ENV")}"
+    fi
 
     # ── Segment : clusters Docker actifs ──
     local seg_dock_content=""
