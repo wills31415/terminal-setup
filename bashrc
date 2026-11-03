@@ -334,6 +334,22 @@ export FZF_ALT_C_OPTS='--preview="ls {}" --prompt="cd ❯ "'
 
 
 # =============================================================
+#  CONDA À LA DEMANDE — à appeler depuis ~/.bashrc.local :
+#    ts_lazy_conda /chemin/vers/bin/conda
+#  conda ne s'initialise qu'au premier « conda … » : le terminal s'ouvre ~1 s plus vite.
+# =============================================================
+ts_lazy_conda() {
+    local bin="$1"
+    [ -x "$bin" ] || return 0
+    eval "conda() {
+        unset -f conda
+        eval \"\$('$bin' 'shell.bash' 'hook' 2>/dev/null)\"
+        conda \"\$@\"
+    }"
+}
+
+
+# =============================================================
 #  PERSONNALISATIONS LOCALES (~/.bashrc.local)
 # =============================================================
 [ -f ~/.bash_aliases ] && . ~/.bash_aliases

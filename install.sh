@@ -291,7 +291,7 @@ known_blocks() {
     [ -f "$f" ] || return 0
     sed -n '/^# >>> conda initialize >>>/,/^# <<< conda initialize <<</p' "$f"
     sed -n '/^# >>> nvm >>>/,/^# <<< nvm <<</p' "$f"
-    grep -E '^[^#]*(NVM_DIR|nvm\.sh|PYENV_ROOT|pyenv init|rbenv init|SDKMAN|\.cargo/env|GOPATH|GOROOT|/usr/local/go/bin|docker-apps|CUSTOM_DOCKER_CLUSTER_BASE_PATH=|iterm2_shell_integration)' "$f" \
+    grep -E '^[^#]*(NVM_DIR|nvm\.sh|PYENV_ROOT|pyenv init|rbenv init|SDKMAN|\.cargo/env|GOPATH|GOROOT|/usr/local/go/bin|docker-apps|CUSTOM_DOCKER_CLUSTER_BASE_PATH=|iterm2_shell_integration|ts_lazy_conda)' "$f" \
         | grep -vE '^\s*#' || true
 }
 
@@ -302,7 +302,7 @@ other_lines() {
     provided="$(ls "$REPO_DIR/bin" | paste -sd'|' -)"
     sed -e '/^# >>> conda initialize >>>/,/^# <<< conda initialize <<</d' \
         -e '/^# >>> nvm >>>/,/^# <<< nvm <<</d' "$f" \
-    | grep -vE '^[^#]*(NVM_DIR|nvm\.sh|PYENV_ROOT|pyenv init|rbenv init|SDKMAN|\.cargo/env|GOPATH|GOROOT|/usr/local/go/bin|docker-apps|CUSTOM_DOCKER_CLUSTER_BASE_PATH=|iterm2_shell_integration)' \
+    | grep -vE '^[^#]*(NVM_DIR|nvm\.sh|PYENV_ROOT|pyenv init|rbenv init|SDKMAN|\.cargo/env|GOPATH|GOROOT|/usr/local/go/bin|docker-apps|CUSTOM_DOCKER_CLUSTER_BASE_PATH=|iterm2_shell_integration|ts_lazy_conda)' \
     | awk -v re="^(${provided})[[:space:]]*\\\\(\\\\)" '
         # Une fonction fournie par bin/ disparaît, avec les commentaires qui la précèdent.
         skip { if ($0 ~ /^\}/) skip = 0; next }
