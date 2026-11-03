@@ -1,0 +1,118 @@
+#!/usr/bin/env bash
+# line — extrait un bloc de lignes d'un fichier ou d'un flux (outil perso de terminal-setup).
+# Syntaxe : line [-h|--help] [-v|--verbose] [fichier] <numéro> [lignes_sup]
+
+line() {
+    local verbose=0
+    local file=""
+    local num_arg=""
+    local extra=0
+
+    # 1. Gestion des options globales (-h, --help, -v, --verbose)
+    if [[ "$1" == "-h" || "$1" == "--help" ]]; then
+        echo "Usage :"
+        echo "  line [options] <fichier> <numéro> [lignes_sup]"
+        echo "  cat <fichier> | line [options] <numéro> [lignes_sup]"
+        echo ""
+        echo "Options :"
+        echo "  -h, --help     Afficher cette aide"
+        echo "  -v, --verbose  Activer les avertissements de débordement sur stderr"
+        echo ""
+        echo "Indexation :"
+        echo "  1 = Première ligne, -1 = Dernière ligne."
+        echo "  0 = Avant la première ligne, -0 = Après la dernière ligne."
+        return 0
+    elif [[ "$1" == "-v" || "$1" == "--verbose" ]]; then
+        verbose=1
+        shift
+    fi
+
+    # 2. Routage et extraction des arguments (Fichier ou Pipe) : mode fichier si le
+    #    premier argument est un fichier existant (marche aussi dans un script, sans terminal).
+    if [ "$#" -ge 2 ] && [ -f "$1" ] || [ -t 0 ]; then
+        if [ "$#" -lt 2 ] || [ "$#" -gt 3 ]; then
+            echo "Erreur : Syntaxe attendue -> line [options] <fichier> <numéro> [lignes_sup]" >&2
+            return 1
+        fi
+        file="$1"
+        num_arg="$2"
+        extra="${3:-0}"
+        [ ! -f "$file" ] && { echo "Erreur : Le fichier '$file' n'existe pas." >&2; return 1; }
+    else
+        if [ "$#" -lt 1 ] || [ "$#" -gt 2 ]; then
+            echo "Erreur : Syntaxe avec pipe -> cat fichier | line [options] <numéro> [lignes_sup]" >&2
+            return 1
+        fi
+        num_arg="$1"
+        extra="${2:-0}"
+    fi
+
+    # 3. Validation des entiers
+    [[ ! "$num_arg" =~ ^-?[0-9]+$ ]] && { echo "Erreur : '$num_arg' n'est pas valide." >&2; return 1; }
+    [[ ! "$extra" =~ ^-?[0-9]+$ ]] && { echo "Erreur : '$extra' n'est pas valide." >&2; return 1; }
+
+    # 4. Lecture du contenu et calcul propre du nombre total de lignes
+    local content
+    content=$( [ -n "$file" ] && cat "$file" || cat )
+    local raw_total
+    raw_total=$(echo "$content" | wc -l)
+    # Suppression des espaces/tabulations superflus générés par wc -l
+    local total_lines=${raw_total//[[:space:]]/}
+    [ -z "$content" ] && total_lines=0
+
+    # 5. Détection stricte du signe du premier argument
+    local is_negative=0
+    [[ "$num_arg" == -0* || "${num_arg:0:1}" == "-" ]] && is_negative=1
+
+    # 6. Calcul des positions absolues de départ et de fin
+    local start_line=0
+    if [ "$num_arg" = "0" ] || [ "$num_arg" = "-0" ]; then
+        [ "$is_negative" -eq 1 ] && start_line=$((total_lines + 1)) || start_line=0
+    else
+        [ "$is_negative" -eq 1 ] && start_line=$((total_lines + num_arg + 1)) || start_line=$num_arg
+    fi
+
+    local end_line=0
+    if [ "$num_arg" = "0" ] || [ "$num_arg" = "-0" ]; then
+        if [ "$is_negative" -eq 1 ]; then
+            end_line=$((start_line - extra))
+        else
+            end_line=$((start_line + extra))
+        fi
+    else
+        [ "$is_negative" -eq 1 ] && end_line=$((start_line - extra)) || end_line=$((start_line + extra))
+    fi
+
+    # Ordonner géométriquement les bornes pour la boucle
+    local first=$start_line
+    local last=$end_line
+    if [ "$start_line" -gt "$end_line" ]; then
+        first=$end_line
+        last=$start_line
+    fi
+
+    # 7. Avertissement optionnel nettoyé sur stderr (-v / --verbose)
+    if [ "$verbose" -eq 1 ]; then
+        if [ "$first" -lt 1 ] || [ "$last" -gt "$total_lines" ]; then
+            local block_str=""
+            if [ "$first" -eq "$last" ]; then
+                block_str="ligne $first"
+            else
+                block_str="lignes $first à $last"
+            fi
+            echo "Avertissement : Le bloc demandé [$block_str] dépasse les limites du fichier (1 à $total_lines)." >&2
+        fi
+    fi
+
+    # 8. Affichage exclusif des lignes valides
+    local i
+    for ((i=first; i<=last; i++)); do
+        if [ "$i" -ge 1 ] && [ "$i" -le "$total_lines" ]; then
+            echo "$content" | sed -n "${i}p"
+        fi
+    done
+
+    return 0
+}
+
+line "$@"

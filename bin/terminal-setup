@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+# terminal-setup — met à jour la config terminal depuis le dépôt (git pull + install).
+set -euo pipefail
+REPO="$(cat "${XDG_DATA_HOME:-$HOME/.local/share}/terminal-setup/repo" 2>/dev/null || true)"
+case "${1:-}" in
+    update)
+        if [ -f /etc/homelab-terminal ]; then
+            echo "Ici, la config terminal est installée par le homelab : elle se met à jour avec « homelab apply »."
+            exit 1
+        fi
+        [ -d "$REPO/.git" ] || { echo "dépôt introuvable ($REPO) : relance install.sh depuis ton clone." >&2; exit 1; }
+        git -C "$REPO" pull --ff-only
+        exec "$REPO/install.sh" --update
+        ;;
+    version)
+        [ -d "$REPO/.git" ] && git -C "$REPO" log -1 --format='%h  %ad  %s' --date=short || echo "inconnue"
+        ;;
+    *)
+        echo "Usage : terminal-setup update   (dernière version du dépôt, ~/.bashrc.local intact)"
+        echo "        terminal-setup version"
+        [ -n "${1:-}" ] && exit 1 || exit 0
+        ;;
+esac

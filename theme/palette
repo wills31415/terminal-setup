@@ -1,0 +1,22 @@
+# terminal-setup — palette commune (One Dark), assortie au prompt.
+# Sert à générer le thème d'iTerm2 (macOS) et de Termux (Android). Format : nom=#rrggbb
+background=#1e2127
+foreground=#d7dae0
+cursor=#e5c07b
+selection=#3e4451
+color0=#282c34
+color1=#e06c75
+color2=#98c379
+color3=#e5c07b
+color4=#61afef
+color5=#c678dd
+color6=#56b6c2
+color7=#abb2bf
+color8=#5c6370
+color9=#ef8a92
+color10=#b5e09a
+color11=#f0d197
+color12=#8cc6ff
+color13=#dba5ee
+color14=#7fd3dd
+color15=#e6e9ef

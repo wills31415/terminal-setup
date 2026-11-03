@@ -1,8 +1,16 @@
+# terminal-setup — ~/.bashrc commun à toutes les machines (macOS, Linux, Raspberry Pi,
+# WSL2, Termux). Ne pas éditer ici : les réglages propres à une machine vont dans
+# ~/.bashrc.local (jamais écrasé). Mise à jour : terminal-setup update.
+
 # Non-interactive shells → ne rien charger
 case $- in
     *i*) ;;
       *) return;;
 esac
+
+# Termux (Android) : préfixe de ses paquets (/data/data/com.termux/files/usr).
+_TS_TERMUX=""
+[[ -n "${TERMUX_VERSION:-}" || "${PREFIX:-}" == */com.termux/* ]] && _TS_TERMUX=1
 
 
 # =============================================================
@@ -73,6 +81,25 @@ _PL_BG_GIT="90;74;0"         _PL_FG_GIT="229;214;138"
 _PL_BG_PY="74;37;85"         _PL_FG_PY="212;181;224"
 _PL_BG_DOCK="26;74;74"       _PL_FG_DOCK="142;208;208"
 _PL_BG_JOB="58;58;42"        _PL_FG_JOB="200;200;160"
+_PL_BG_ROOT="140;24;24"      _PL_FG_ROOT="255;225;225"
+
+# ── Identité de la machine : icône + couleur (bg) par machine du homelab ──
+# Surchargeable dans ~/.bashrc.local : TS_NAME (nom affiché), TS_USER (utilisateur
+# affiché), TS_ICON, TS_COLOR ("r;g;b" du fond).
+_ts_identity() {
+    local name="${TS_NAME:-${HOSTNAME%%.*}}"
+    local icon="" bg="$_PL_BG_HOST" fg="$_PL_FG_HOST"
+    case "$name" in
+        gw)               icon="🛡"  bg="38;79;120"   fg="215;228;245" ;;   # passerelle
+        nas)              icon="🗄"  bg="74;50;112"   fg="225;210;245" ;;   # stockage
+        enclume)          icon="🖥"  bg="112;62;38"   fg="245;215;195" ;;   # PC fixe
+        macbook-pro)      icon="💻" bg="78;84;96"    fg="228;231;236" ;;   # portable
+        galaxy-s22-ultra) icon="📱" bg="112;40;82"   fg="245;205;225" ;;   # téléphone
+    esac
+    [[ -n "${TS_ICON:-}" ]] && icon="$TS_ICON"
+    [[ -n "${TS_COLOR:-}" ]] && bg="$TS_COLOR"
+    _TS_ID_NAME="$name" _TS_ID_ICON="$icon" _TS_ID_BG="$bg" _TS_ID_FG="$fg"
+}
 
 _timer_start() {
     [[ -z "${_prompt_ready:-}" ]] && return
@@ -133,14 +160,17 @@ _prompt_command() {
         fi
     fi
 
-    # ── Segment : user@host ──
-    local seg_host_content seg_host_bg seg_host_fg
+    # ── Segment : machine (icône + couleur), root en rouge, ⚡ si SSH ──
+    _ts_identity
+    local _user="${TS_USER:-\\u}"
+    local seg_host_content="${_TS_ID_ICON:+$_TS_ID_ICON }${_user}@${_TS_ID_NAME}"
+    local seg_host_bg="$_TS_ID_BG" seg_host_fg="$_TS_ID_FG"
+    if (( EUID == 0 )); then
+        seg_host_content="⚠ ${seg_host_content}"
+        seg_host_bg="$_PL_BG_ROOT" seg_host_fg="$_PL_FG_ROOT"
+    fi
     if [[ -n "${SSH_TTY:-}" || -n "${SSH_CLIENT:-}" || -n "${SSH_CONNECTION:-}" ]]; then
-        seg_host_content="⚡ \\u@\\h"
-        seg_host_bg="$_PL_BG_SSH"  seg_host_fg="$_PL_FG_SSH"
-    else
-        seg_host_content="\\u@\\h"
-        seg_host_bg="$_PL_BG_HOST" seg_host_fg="$_PL_FG_HOST"
+        seg_host_content+=" ⚡"
     fi
 
     # ── Segment : git ──
@@ -230,7 +260,20 @@ _prompt_command() {
     unset _cmd_ran
 }
 
-PROMPT_COMMAND="_prompt_command"
+# Console sans police ni couleurs vraies (console série de l'iDRAC, écran Linux) :
+# prompt simple et lisible, sans séparateurs Powerline ni icônes.
+_prompt_plain() {
+    local exit_code=$? mark="\[\e[32m\]ok\[\e[0m\]"
+    (( exit_code )) && mark="\[\e[31m\]err $exit_code\[\e[0m\]"
+    local who="\[\e[1;36m\]\u@${TS_NAME:-\h}\[\e[0m\]"
+    (( EUID == 0 )) && who="\[\e[1;31m\]\u@${TS_NAME:-\h}\[\e[0m\]"
+    PS1="[$mark] $who \[\e[32m\]\w\[\e[0m\]\n\\$ "
+}
+
+case "${TERM:-dumb}" in
+    linux|vt*|dumb) PROMPT_COMMAND="_prompt_plain" ;;
+    *)              PROMPT_COMMAND="_prompt_command" ;;
+esac
 
 
 # =============================================================
@@ -248,7 +291,9 @@ case "$(uname -s)" in
         unset _f
         ;;
     *)
-        if [ -r /usr/share/bash-completion/bash_completion ]; then
+        if [ -r "${PREFIX:-/usr}/share/bash-completion/bash_completion" ]; then
+            source "${PREFIX:-/usr}/share/bash-completion/bash_completion"     # Linux, Termux
+        elif [ -r /usr/share/bash-completion/bash_completion ]; then
             source /usr/share/bash-completion/bash_completion
         elif [ -r /etc/bash_completion ]; then
             source /etc/bash_completion

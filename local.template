@@ -1,0 +1,11 @@
+# ~/.bashrc.local — réglages propres à CETTE machine.
+# Lu à la fin de ~/.bashrc par tous les terminaux. terminal-setup ne l'écrase jamais.
+
+# ── 1. Identité dans le prompt ──────────────────────────────────────────────
+# Vide = le vrai nom de la machine. TS_NAME : nom affiché ; TS_USER : utilisateur
+# affiché ; TS_ICON / TS_COLOR ("r;g;b") : icône et couleur du segment machine.
+@IDENTITY@
+# ── 2. Outils de cette machine (conda, docker-apps, iTerm2…) ──────────────────
+@TOOLS@
+# ── 3. Ajouts perso ─────────────────────────────────────────────────────────
+@PERSO@
